@@ -6,14 +6,12 @@ const gameState = {
     playerResponses: {}
 };
 
-// Music elements
-const introMusic = document.getElementById('intro-music');
-const round2Music = document.getElementById('round2-music');
-const finaleMusic = document.getElementById('finale-music');
+// Music element
+const gameMusic = document.getElementById('game-music');
 let currentMusic = null;
 
 // Monster data with correct image paths
-const monsters = [
+const monsters = [ 
     {
         id: 1,
         name: "Vlad the Vampire",
@@ -189,9 +187,9 @@ function startGameFromTitle() {
     document.getElementById('game-title').style.display = 'block';
     
     // Start the music
-    introMusic.volume = 0.7;
-    introMusic.play();
-    currentMusic = introMusic;
+    gameMusic.volume = 0.7;
+    gameMusic.play();
+    currentMusic = gameMusic;
     
     // Start the game
     startGame();
@@ -215,6 +213,7 @@ function renderRound1Selection() {
                 <div class="monster-card" data-id="${monster.id}" onclick="toggleMonsterSelection(${monster.id})">
                     <img src="${monster.image}" alt="${monster.name}">
                     <div class="monster-name">${monster.name}</div>
+                    <div class="selection-rose">🌹</div>
                 </div>
             `).join('')}
         </div>
@@ -269,7 +268,7 @@ function renderConversation(round) {
     const gameControls = document.getElementById('game-controls');
     
     gameScreen.innerHTML = `
-        <h2>Conversation with ${monster.name}</h2>
+        <h2>Date with ${monster.name}</h2>
         <div class="conversation-container">
             <div class="monster-speech">
                 <div class="monster-speech-header">
@@ -335,6 +334,7 @@ function renderRound1Selection2() {
                     <div class="monster-card" data-id="${monster.id}" onclick="toggleRound2Selection(${monster.id})">
                         <img src="${monster.image}" alt="${monster.name}">
                         <div class="monster-name">${monster.name}</div>
+                        <div class="selection-rose">🌹</div>
                     </div>
                 `;
             }).join('')}
@@ -382,7 +382,7 @@ function startRound2() {
     gameState.currentRound = 2;
     gameState.currentMonsterIndex = 0;
     renderConversation(2);
-    playMusic('round2');
+    playMusic();
 }
 
 // Render the screen to select the final winner
@@ -397,20 +397,63 @@ function renderRound2Selection() {
             ${gameState.selectedMonsters.map(monsterId => {
                 const monster = monsters.find(m => m.id === monsterId);
                 return `
-                    <div class="monster-card" data-id="${monster.id}" onclick="selectWinner(${monster.id})">
+                    <div class="monster-card" data-id="${monster.id}" onclick="toggleFinalSelection(${monster.id})">
                         <img src="${monster.image}" alt="${monster.name}">
                         <div class="monster-name">${monster.name}</div>
-                        <div class="rose-icon">🌹</div>
+                        <div class="selection-rose">🌹</div>
                     </div>
                 `;
             }).join('')}
         </div>
+        <div id="confirmation-container"></div>
     `;
     
     gameControls.innerHTML = '';
 }
 
-// Select the winner and show the final screen
+function toggleFinalSelection(monsterId) {
+    // If there's already a confirmation dialog, don't create another one
+    if (document.querySelector('.final-confirmation')) {
+        return;
+    }
+
+    // Clear any previous selections
+    document.querySelectorAll('.monster-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+    
+    // Select the clicked monster
+    const monsterCard = document.querySelector(`.monster-card[data-id="${monsterId}"]`);
+    monsterCard.classList.add('selected');
+    
+    // Show confirmation dialog
+    const monster = monsters.find(m => m.id === monsterId);
+    const confirmationContainer = document.getElementById('confirmation-container');
+    confirmationContainer.innerHTML = `
+        <div class="final-confirmation">
+            <div class="confirmation-box">
+                <h3>Give your final rose to ${monster.name}?</h3>
+                <div class="confirmation-buttons">
+                    <button class="btn" onclick="selectWinner(${monsterId})">Yes, I choose them!</button>
+                    <button class="btn btn-secondary" onclick="cancelFinalSelection()">No, not yet</button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function cancelFinalSelection() {
+    // Remove confirmation dialog
+    const confirmationContainer = document.getElementById('confirmation-container');
+    confirmationContainer.innerHTML = '';
+    
+    // Clear selection
+    document.querySelectorAll('.monster-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+}
+
+// Update the selectWinner function to remove the confirmation dialog
 function selectWinner(monsterId) {
     const monster = monsters.find(m => m.id === monsterId);
     
@@ -432,8 +475,8 @@ function selectWinner(monsterId) {
         <button class="btn btn-large" onclick="startGame()">Play Again</button>
     `;
     
-    // Play finale music
-    playMusic('finale');
+    // Play music
+    playMusic();
     
     // Add some heart animations
     for (let i = 0; i < 10; i++) {
@@ -458,34 +501,13 @@ function createHeartAnimation() {
     }, 3000);
 }
 
-// Play a specific music track
-function playMusic(track) {
-    // First, pause any currently playing music
+// Play music (simplified to just play/pause the one track)
+function playMusic() {
     if (currentMusic) {
-        currentMusic.pause();
-        currentMusic.currentTime = 0;
+        currentMusic.play().catch(e => {
+            console.log("Music autoplay failed, will try again on user interaction", e);
+        });
     }
-    
-    // Set the current music based on the track
-    switch(track) {
-        case 'intro':
-            currentMusic = introMusic;
-            break;
-        case 'round2':
-            currentMusic = round2Music;
-            break;
-        case 'finale':
-            currentMusic = finaleMusic;
-            break;
-        default:
-            currentMusic = introMusic;
-    }
-    
-    // Set volume and play
-    currentMusic.volume = 0.7;
-    currentMusic.play().catch(e => {
-        console.log("Music autoplay failed, will try again on user interaction", e);
-    });
 }
 
 // Make functions available globally
@@ -494,4 +516,6 @@ window.startRound1Conversations = startRound1Conversations;
 window.respondToMonster = respondToMonster;
 window.toggleRound2Selection = toggleRound2Selection;
 window.startRound2 = startRound2;
-window.selectWinner = selectWinner; 
+window.selectWinner = selectWinner;
+window.toggleFinalSelection = toggleFinalSelection;
+window.cancelFinalSelection = cancelFinalSelection; 

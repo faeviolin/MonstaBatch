@@ -196,7 +196,13 @@ function startGameFromTitle() {
 }
 
 function startGame() {
+    // Reset all game state variables
     gameState.currentRound = 1;
+    gameState.selectedMonsters = [];
+    gameState.currentMonsterIndex = 0;
+    gameState.playerResponses = {};
+    
+    // Start fresh with round 1
     renderRound1Selection();
 }
 
@@ -347,8 +353,12 @@ function renderRound1Selection2() {
         </button>
     `;
     
+    // Store the current selected monsters for round 2 selection
+    const round1Selected = [...gameState.selectedMonsters];
     // Reset selected monsters for round 2
     gameState.selectedMonsters = [];
+    // Make the round 1 selected monsters available for round 2 selection
+    gameState.round1Selected = round1Selected;
 }
 
 // Toggle round 2 monster selection
